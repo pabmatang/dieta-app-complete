@@ -76,7 +76,7 @@ function App() {
     }
   
     try {
-      const res = await fetch("http://localhost:8000/perfil", {
+      const res = await fetch(`${BACKEND_URL}/perfil`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
