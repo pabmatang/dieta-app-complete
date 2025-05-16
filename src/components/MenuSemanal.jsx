@@ -5,7 +5,7 @@ import "./MenuSemanal.css"; // Importamos el archivo CSS para los estilos
 import "./Perfil.jsx";
 import "./salidaIA.css";
 import SelectorIngredientes from "./SelectorIngredientes";
-
+import { BACKEND_URL } from '../config';
 
 
 export default function MenuForm() {
