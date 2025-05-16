@@ -13,6 +13,8 @@ const AuthPage = ({ onAuth }) => {
   // Lógica para enviar la información del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(""); // Limpiar error al inicio del submit
+    setSuccess(""); // Limpiar success al inicio del submit
     const url = isRegistering ? `${BACKEND_URL}/register` : `${BACKEND_URL}/login`;
     const payload = isRegistering
       ? { username, email, password }
