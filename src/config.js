@@ -9,7 +9,7 @@ const config = {
   },
   // URL de la API en producción (Render)
   production: {
-    apiUrl: "https://dieta-app-backend.onrender.com", // Ajusta esto con la URL real de tu backend en Render
+    apiUrl: "https://dieta-app-kqhb.onrender.com", // Ajusta esto con la URL real de tu backend en Render
   },
 };
 
