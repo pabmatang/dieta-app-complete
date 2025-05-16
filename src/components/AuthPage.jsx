@@ -71,7 +71,7 @@ const AuthPage = ({ onAuth }) => {
 
     <div className="auth-buttons">
       <button type="submit">
-        {isRegistering ? "Iniciar sesión" : "Registrarse"}
+        {isRegistering ? "Registrarse" : "Iniciar sesión" }
       </button>
       <button
         type="button"
