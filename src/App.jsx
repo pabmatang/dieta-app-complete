@@ -12,7 +12,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import Bienvenida from "./components/Bienvenida";
-import { BACKEND_URL } from '../config';
+import { BACKEND_URL } from './config';
 
 
 
