@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { BACKEND_URL } from '../config';
 
 const UserInfoForm = ({ onComplete, token }) => {
   const [edad, setEdad] = useState("");
@@ -9,7 +10,7 @@ const UserInfoForm = ({ onComplete, token }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [objetivo, setObjetivo] = useState("");
-  import { BACKEND_URL } from '../config';
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
