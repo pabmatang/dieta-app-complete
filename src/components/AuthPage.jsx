@@ -38,7 +38,22 @@ const AuthPage = ({ onAuth }) => {
           onAuth(data.access_token);  // Para login
         }
       } else {
-        setError(data.detail || "Error en la autenticación");
+       // Modificación para manejar el error detallado
+        let errorMessage = "Error en la autenticación";
+        if (data.detail) {
+          if (typeof data.detail === 'string') {
+            errorMessage = data.detail;
+          } else {
+            // Si data.detail es un objeto o array (común en errores de validación de FastAPI)
+            // Intentamos obtener un mensaje más específico o lo convertimos a JSON
+            if (Array.isArray(data.detail) && data.detail.length > 0 && data.detail[0].msg) {
+              errorMessage = data.detail.map(err => `${err.loc.join('.')} - ${err.msg}`).join('; ');
+            } else {
+              errorMessage = JSON.stringify(data.detail);
+            }
+          }
+        }
+        setError(errorMessage);
       }
     } catch (error) {
       setError("Hubo un error con la solicitud.");
