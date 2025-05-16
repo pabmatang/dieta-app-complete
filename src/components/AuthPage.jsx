@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./AuthPage.css";
+import { BACKEND_URL } from '../config';
 
 const AuthPage = ({ onAuth }) => {
   const [username, setUsername] = useState("");
