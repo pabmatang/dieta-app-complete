@@ -12,6 +12,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import Bienvenida from "./components/Bienvenida";
+import { BACKEND_URL } from '../config';
 
 
 
@@ -33,7 +34,7 @@ function App() {
     localStorage.setItem("token", newToken);
   
     try {
-      const res = await fetch("http://localhost:8000/perfil", {
+      const res = await fetch(`${BACKEND_URL}/perfil`, {
         headers: {
           Authorization: `Bearer ${newToken}`,
         },
