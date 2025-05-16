@@ -27,7 +27,7 @@ export default function Register({ onRegister }) {
     }
 
     try {
-      const res = await axios.post("BACKEND_URL/register", form);
+      const res = await axios.post(`${BACKEND_URL}/register`, form);
       setSuccessMessage("Registro exitoso. Ahora puedes iniciar sesión.");
       setForm({ email: "", password: "", confirmPassword: "" }); // Limpiar formulario
     } catch (err) {
