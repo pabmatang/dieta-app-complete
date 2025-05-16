@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { BACKEND_URL } from '../config';
 
 const Perfil = ({ token }) => {
   const [perfil, setPerfil] = useState(null);
@@ -29,7 +30,7 @@ const Perfil = ({ token }) => {
 
   const fetchPerfil = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/perfil", {
+      const res = await axios.get("BACKEND_URL/perfil", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
