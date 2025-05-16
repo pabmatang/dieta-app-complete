@@ -30,7 +30,7 @@ const Perfil = ({ token }) => {
 
   const fetchPerfil = async () => {
     try {
-      const res = await axios.get("BACKEND_URL/perfil", {
+      const res = await axios.get(`${BACKEND_URL}/perfil`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
