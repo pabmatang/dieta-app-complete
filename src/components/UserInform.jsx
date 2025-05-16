@@ -9,6 +9,7 @@ const UserInfoForm = ({ onComplete, token }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [objetivo, setObjetivo] = useState("");
+  import { BACKEND_URL } from '../config';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,7 +17,7 @@ const UserInfoForm = ({ onComplete, token }) => {
     setSuccess("");
     console.log("Token enviado al backend:", token);
     try {
-      const response = await fetch("http://localhost:8000/user-info", {
+      const response = await fetch("BACKEND_URL/user-info", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
