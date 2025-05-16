@@ -18,7 +18,7 @@ const UserInfoForm = ({ onComplete, token }) => {
     setSuccess("");
     console.log("Token enviado al backend:", token);
     try {
-      const response = await fetch("BACKEND_URL/user-info", {
+      const response = await fetch(`${BACKEND_URL}/user-info`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
