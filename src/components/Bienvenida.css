@@ -1,0 +1,19 @@
+.bienvenida-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px); /* Altura total menos navbar */
+  width: 100%;
+  text-align: center;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.bienvenida-imagen {
+  max-width: 200px;
+  height: auto; /* Mantiene proporciones originales */
+  margin-bottom: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
