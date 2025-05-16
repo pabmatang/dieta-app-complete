@@ -89,7 +89,7 @@ const Perfil = ({ token }) => {
 
   const handleSave = async () => {
     try {
-      await axios.patch("http://localhost:8000/actualizar-perfil", 
+      await axios.patch(`${BACKEND_URL}/actualizar-perfil`, 
         editableData,
         {
           headers: {
