@@ -123,7 +123,7 @@ const Perfil = ({ token }) => {
       
       // Enviar la URL de la receta en el formato que espera el backend
       await axios.post(
-        "http://localhost:8000/eliminar-favorita", 
+        `${BACKEND_URL}/eliminar-favorita`, 
         { recipe_url: receta.url }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
