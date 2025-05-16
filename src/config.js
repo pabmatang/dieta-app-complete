@@ -1,6 +1,6 @@
 // Configuración para diferentes entornos
 const isDevelopment = import.meta.env.DEV;
-
+BACKEND_URL=="https://dieta-app-kqhb.onrender.com"
 // URLs base para la API
 const config = {
   // URL de la API en desarrollo (local)
