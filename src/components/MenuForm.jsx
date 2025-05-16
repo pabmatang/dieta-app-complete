@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import React from "react";
+import { BACKEND_URL } from '../config';
 
 export default function MenuForm() {
   const [formData, setFormData] = useState({
@@ -36,7 +37,7 @@ export default function MenuForm() {
     };
 
     try {
-      const res = await axios.post("http://localhost:8000/generate-menu", payload);
+      const res = await axios.post(`${BACKEND_URL}/generate-menu`, payload);
       console.log("Respuesta del backend:", res.data);
       setRecipes(res.data.hits || []);
     } catch (err) {
