@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "./Login.css";
+import { BACKEND_URL } from '../config';
 
 export default function Register({ onRegister }) {
   const [form, setForm] = useState({ email: "", password: "", confirmPassword: "" });
@@ -26,7 +27,7 @@ export default function Register({ onRegister }) {
     }
 
     try {
-      const res = await axios.post("http://localhost:8000/register", form);
+      const res = await axios.post("BACKEND_URL/register", form);
       setSuccessMessage("Registro exitoso. Ahora puedes iniciar sesión.");
       setForm({ email: "", password: "", confirmPassword: "" }); // Limpiar formulario
     } catch (err) {
