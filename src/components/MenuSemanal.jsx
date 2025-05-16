@@ -106,7 +106,7 @@ Responde únicamente con el siguiente formato exacto, sin explicaciones adiciona
 NUEVO_NOMBRE_RECETA :: INGREDIENTE_1, INGREDIENTE_2, INGREDIENTE_3 :: CALORIAS_ESTIMADAS
 Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Pollo a la parrilla, Lechuga romana, Aderezo ligero :: 350).`;
 
-      const res = await fetch("http://localhost:8000/ia/alternativa", {
+      const res = await fetch("BACKEND_URL/ia/alternativa", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -204,7 +204,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
     const fetchPerfil = async () => {
       const token = localStorage.getItem("token");
       try {
-        const res = await fetch("http://localhost:8000/perfil", {
+        const res = await fetch("BACKEND_URL/perfil", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -267,7 +267,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
       return;
     }
 
-    const response = await fetch("http://localhost:8000/generate-weekly-menu", {
+    const response = await fetch("BACKEND_URL/generate-weekly-menu", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -365,7 +365,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
     console.log("Payload a enviar:", JSON.stringify(payload, null, 2));
     try {
       const res = await axios.post(
-        "http://localhost:8000/generate-weekly-menu",
+        "BACKEND_URL/generate-weekly-menu",
         payload,
         {
           headers: { Authorization: `Bearer ${token}` }, // Enviar token si existe
@@ -376,7 +376,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
       setGeneratedMenuWithOptions(res.data);
       // Llamada para actualizar el perfil con el último menú generado
       await axios.post(
-        "http://localhost:8000/guardar-menu",
+        "BACKEND_URL/guardar-menu",
         {
           menu: menuData,
         },
@@ -456,7 +456,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
 
     try {
       const response = await fetch(
-        "http://localhost:8000/generate-shopping-list",
+        "BACKEND_URL/generate-shopping-list",
         {
           method: "POST",
           headers: {
@@ -701,7 +701,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
       console.log("receta label",receta.label)
       const token = localStorage.getItem("token");
       try {
-        await axios.post("http://localhost:8000/guardar-favorita", receta, {
+        await axios.post("BACKEND_URL/guardar-favorita", receta, {
           headers: { Authorization: `Bearer ${token}` },
         });
         alert("Receta guardada como favorita.");
@@ -735,7 +735,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
       try {
         if (esActualmenteFavorita) {
           // ELIMINAR de favoritos
-          await axios.post("http://localhost:8000/eliminar-favorita", 
+          await axios.post("BACKEND_URL/eliminar-favorita", 
             { recipe_url: recipeId }, // El backend necesita el identificador para saber cuál eliminar
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -751,7 +751,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
               ingredients: recipeOption.ingredients,
               // Añade cualquier otro campo de recipeOption que quieras guardar en el backend
           };
-          await axios.post("http://localhost:8000/guardar-favorita", 
+          await axios.post("BACKEND_URL/guardar-favorita", 
               payloadFavorito,
               { headers: { Authorization: `Bearer ${token}` } }
           );
