@@ -80,7 +80,6 @@ const AuthPage = ({ onAuth }) => {
        type={isRegistering ? "submit" : "button"}
         onClick={!isRegistering ? () => setIsRegistering(true) : undefined}
       >
-      >
         Registrarse
       </button>
     </div>
