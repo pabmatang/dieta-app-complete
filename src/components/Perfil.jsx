@@ -31,46 +31,92 @@ const Perfil = ({ token }) => {
   const fetchPerfil = async () => {
     try {
       const res = await axios.get(`${BACKEND_URL}/perfil`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Datos de perfil cargados:", res.data);
-      setPerfil(res.data);
+      console.log("----- DEBUG PERFIL START -----");
+      console.log("Raw res.data:", res.data);
+      console.log("Type of res.data:", typeof res.data);
+
+      if (res.data && typeof res.data === 'object') {
+          console.log("Keys in res.data:", Object.keys(res.data));
+          if (res.data.hasOwnProperty('recetas_favoritas')) {
+              console.log("res.data.recetas_favoritas EXISTS. Value:", res.data.recetas_favoritas);
+              console.log("Type of res.data.recetas_favoritas:", typeof res.data.recetas_favoritas);
+          } else {
+              console.log("res.data.recetas_favoritas DOES NOT EXIST.");
+              if (res.data.hasOwnProperty('sale')) {
+                 console.log("Found 'sale' key instead. Value:", res.data.sale);
+                 console.log("Type of res.data.sale:", typeof res.data.sale);
+              }
+          }
+      }
       
-      // Parsear recetas favoritas y actualizar estado separado
-      if (res.data.recetas_favoritas) {
+      setPerfil(res.data);
+      let favoritasArray = []; 
+
+      let favoriteData = null;
+      if (res.data && res.data.hasOwnProperty('recetas_favoritas')) {
+          favoriteData = res.data.recetas_favoritas;
+          console.log("Using res.data.recetas_favoritas as source for favoriteData.");
+      } else if (res.data && res.data.hasOwnProperty('sale')) {
+          console.warn("res.data.recetas_favoritas not found. Trying 'sale' key based on logs.");
+          favoriteData = res.data.sale;
+          console.log("Using res.data.sale as source for favoriteData.");
+      }
+
+      if (favoriteData !== null && favoriteData !== undefined) {
+        console.log("Raw favoriteData to be processed:", favoriteData);
+        console.log("Type of favoriteData:", typeof favoriteData);
         try {
-          let favoritas = [];
-          
-          // Si es un string, intentar parsearlo
-          if (typeof res.data.recetas_favoritas === 'string') {
-            favoritas = JSON.parse(res.data.recetas_favoritas);
-          } 
-          // Si ya es un array, usarlo directamente
-          else if (Array.isArray(res.data.recetas_favoritas)) {
-            favoritas = res.data.recetas_favoritas;
+          if (typeof favoriteData === 'string') {
+            console.log("Attempting JSON.parse on favoriteData (string).");
+            favoritasArray = JSON.parse(favoriteData);
+          } else if (Array.isArray(favoriteData)) {
+            console.log("favoriteData is already an array.");
+            favoritasArray = favoriteData;
+          } else {
+            console.warn("favoriteData is neither a string nor an array. Treating as empty. Type:", typeof favoriteData);
+            favoritasArray = [];
+          }
+
+          if (!Array.isArray(favoritasArray)) {
+              console.error("After initial processing, favoritasArray is NOT an array. Value:", favoritasArray, ". Resetting to [].");
+              favoritasArray = [];
+          } else {
+              console.log("After initial processing, favoritasArray IS an array. Length:", favoritasArray.length);
           }
           
-          // Filtrar recetas sin URL o propiedad undefined para evitar errores
-          favoritas = favoritas.filter(receta => receta && receta.url);
+          // Deep log of array before filtering
+          console.log("FavoritasArray before filtering (deep copy):", JSON.parse(JSON.stringify(favoritasArray)));
+
+          const processedFavoritas = favoritasArray
+            .filter(receta => {
+              const isValid = receta && typeof receta === 'object' && receta.recipe_url;
+              if (!isValid) {
+                console.log("Filtering out invalid receta (recipe_url missing or not an object?):", receta);
+              }
+              return isValid;
+            })
+            .map((receta, index) => ({
+              ...receta,
+              id: `${receta.recipe_url}-${index}`,
+              url: receta.recipe_url,
+            }));
           
-          // Asignar un ID único a cada receta para mejorar el manejo de keys en React
-          favoritas = favoritas.map((receta, index) => ({
-            ...receta,
-            id: `${receta.url}-${index}`
-          }));
-          
-          setRecetasFavoritasData(favoritas);
-          console.log("Recetas favoritas cargadas:", favoritas);
+          console.log("Processed (filtered and mapped) favoritas:", processedFavoritas);
+          setRecetasFavoritasData(processedFavoritas);
+
         } catch (e) {
-          console.error("Error al parsear recetas favoritas:", e);
-          setRecetasFavoritasData([]);
+          console.error("Error processing favoriteData. Raw favoriteData that caused error:", favoriteData, "Error:", e);
+          setRecetasFavoritasData([]); 
         }
       } else {
+        console.log("No data found in 'recetas_favoritas' or 'sale' properties. Setting favoritas to empty.");
         setRecetasFavoritasData([]);
       }
+      
+      console.log("----- DEBUG PERFIL END -----");
       
       setEditableData({
         peso: res.data.peso || "",
@@ -78,8 +124,15 @@ const Perfil = ({ token }) => {
         objetivo: res.data.objetivo || "",
       });
     } catch (err) {
-      console.error("Error fetching perfil:", err);
+      console.error("Error fetching perfil (outer catch):", err);
       setError("Error en la solicitud al servidor.");
+      // Log error related to res.data if possible
+      if (err.response) {
+        console.error("Error response data:", err.response.data);
+        console.error("Error response status:", err.response.status);
+      }
+      setRecetasFavoritasData([]); // Ensure it's reset on error too
+      console.log("----- DEBUG PERFIL END (with error) -----");
     }
   };
 
@@ -119,35 +172,47 @@ const Perfil = ({ token }) => {
     setSuccess("");
     
     try {
-      console.log("Eliminando receta con URL:", receta.url);
+      console.log("Intentando eliminar receta. URL enviada al backend como recipe_url:", receta.url);
       
-      // Enviar la URL de la receta en el formato que espera el backend
-      await axios.post(
+      // Petición al backend. El backend espera 'recipe_url' en el cuerpo.
+      // El objeto 'receta' en el frontend tiene la URL correcta en 'receta.url' debido al mapeo anterior.
+      const response = await axios.post(
         `${BACKEND_URL}/eliminar-favorita`, 
-        { recipe_url: receta.url }, 
+        { recipe_url: receta.url }, // Enviamos la URL del frontend como recipe_url al backend
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      // Actualización UI local inmediata para mejor experiencia
-      setRecetasFavoritasData(prevRecetas => 
-        prevRecetas.filter(r => r.url !== receta.url)
-      );
-      
-      setSuccess("Receta eliminada de favoritos correctamente.");
-      
-      // Recargar perfil completo después de un breve retraso para sincronizar con el backend
-      setTimeout(() => {
-        fetchPerfil(); // Recargar datos del servidor
-      }, 1000);
+
+      // Asumimos que un status 200 o similar (ej. 204 No Content) significa éxito.
+      // También puedes verificar el contenido de response.data si tu backend envía una confirmación específica.
+      if (response.status >= 200 && response.status < 300) {
+        console.log("Backend confirmó la eliminación. Actualizando UI localmente.", response.data);
+        // Actualiza el estado local para reflejar la eliminación
+        setRecetasFavoritasData(prevRecetas => 
+          prevRecetas.filter(r => r.url !== receta.url)
+        );
+        setSuccess(response.data?.message || "Receta eliminada de favoritos correctamente.");
+        // No llamamos a fetchPerfil() aquí para evitar que la receta reaparezca.
+        // La UI se actualiza localmente y confiamos en que el backend está sincronizado.
+      } else {
+        // El backend respondió con un status de éxito, pero el contenido podría indicar un problema no esperado.
+        console.warn("El backend respondió con status de éxito pero podría haber un problema:", response);
+        setError(response.data?.message || "No se pudo eliminar la receta. Respuesta inesperada del servidor.");
+        // En este caso, sí recargamos para estar seguros del estado del backend.
+        fetchPerfil(); 
+      }
       
     } catch (error) {
-      console.error("Error al eliminar favorito:", error);
-      setError("No se pudo eliminar la receta de favoritos.");
-      
-      // Forzar recarga del perfil para asegurar sincronización
-      setTimeout(() => {
-        setForceUpdate(prev => prev + 1);
-      }, 500);
+      console.error("Error en la petición axios al eliminar favorito:", error);
+      if (error.response) {
+        console.error("Respuesta del error del backend:", error.response.data);
+        setError(error.response.data?.detail || error.response.data?.message || "No se pudo eliminar la receta de favoritos.");
+      } else if (error.request) {
+        setError("No se recibió respuesta del servidor al intentar eliminar.");
+      } else {
+        setError("Error al configurar la petición para eliminar la receta.");
+      }
+      // Si hubo un error, recargamos el perfil para asegurar que la UI refleje el estado real del backend.
+      fetchPerfil();
     } finally {
       setEliminandoFavorito(false);
     }
