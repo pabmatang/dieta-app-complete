@@ -15,6 +15,23 @@ const AuthPage = ({ onAuth }) => {
     e.preventDefault();
     setError(""); // Limpiar error al inicio del submit
     setSuccess(""); // Limpiar success al inicio del submit
+    // Validación básica del lado del cliente
+    if (isRegistering) {
+      if (!username || !email || !password) {
+        setError("Por favor, completa todos los campos para el registro.");
+        return; // No continuar si los campos de registro están incompletos
+      }
+      // Podrías añadir una validación de formato de email simple aquí también si quieres
+      if (!email.includes('@')) {
+        setError("Por favor, introduce un email válido.");
+        return;
+      }
+    } else { // Modo Login
+      if (!username || !password) {
+        setError("Por favor, completa tu usuario y contraseña para iniciar sesión.");
+        return; // No continuar si los campos de login están incompletos
+      }
+    }
     const url = isRegistering ? `${BACKEND_URL}/register` : `${BACKEND_URL}/login`;
     const payload = isRegistering
       ? { username, email, password }
