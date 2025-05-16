@@ -12,7 +12,7 @@ const AuthPage = ({ onAuth }) => {
   // Lógica para enviar la información del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = isRegistering ? "BACKENDdasdasdas_URL/register" : "BACKENDasfdasfasd_URL/login";
+    const url = isRegistering ? "BACKEND_URL/register" : "BACKEND_URL/login";
     const payload = isRegistering
       ? { username, email, password }
       : { username, password }; // Solo username y password para login
