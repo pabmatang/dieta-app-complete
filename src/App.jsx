@@ -27,7 +27,14 @@ function App() {
   const goToUserInfo = () => setView("userInform");
   const goToMenuSemanal = () => setView("menuSemanal");
   const goToPerfil = () => setView("perfil");
-  const goToRecomendaciones = () => setView("recomendaciones");
+  const goToRecomendaciones = () => {
+    if (!token) {
+      setView("auth");
+      console.log("No hay token, redirigiendo a login");
+      return;
+    }
+    setView("recomendaciones");
+  };
 
   const handleLogin = async (newToken) => {
     setToken(newToken);
@@ -126,18 +133,19 @@ function App() {
         goToPerfil={goToPerfil}
         goToRecomendaciones={goToRecomendaciones}
       />
-      {view === "bienvenida" && (
-      <Bienvenida onStart={handleStart} token={token}/>
-    )}
-      
-      {view === "auth" && <AuthPage onAuth={handleLogin} />}
-      {view === "userInform" && (
-        <UserInfoForm onComplete={goToMenuSemanal} token={token} />
-      )}
-      {view === "menuSemanal" && <MenuSemanal token={token} />}
-      {view === "perfil" && <Perfil token={token}/>}
-      {view === "recomendaciones" && <RecomendacionSemanal token={token} />}
-      
+      <div className="main-wrapper">
+        {view === "bienvenida" && (
+          <Bienvenida onStart={handleStart} token={token}/>
+        )}
+        
+        {view === "auth" && <AuthPage onAuth={handleLogin} />}
+        {view === "userInform" && (
+          <UserInfoForm onComplete={goToMenuSemanal} token={token} />
+        )}
+        {view === "menuSemanal" && <MenuSemanal token={token} />}
+        {view === "perfil" && <Perfil token={token}/>}
+        {view === "recomendaciones" && <RecomendacionSemanal token={token} />}
+      </div>
     </div>
   );
 }
