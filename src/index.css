@@ -73,3 +73,18 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Añadir margen superior para el contenido principal */
+.main-wrapper {
+  margin-top: 80px; /* Ajustar según la altura del navbar */
+  padding: 1rem;
+}
+
+/* También aplicar margen a estos contenedores para evitar que queden debajo del navbar */
+.auth-container,
+.menu-form-container,
+.recommendations-container,
+.bienvenida-container {
+  margin-top: 80px;
+  min-height: calc(100vh - 80px);
+}
