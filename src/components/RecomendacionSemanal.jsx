@@ -4,7 +4,7 @@ import './MenuSemanal.css'; // Reutilizar algunos estilos si aplica
 import { BACKEND_URL } from '../config'; // Importar la configuración
 
 // Componente para mostrar una receta individual (similar a MenuSemanal.jsx)
-const RecipeCard = ({ recipe, mealType, dayKey, recetasFavoritas, toggleFavoritoHandler, guardandoFavorito }) => {
+const RecipeCard = ({ recipe, mealType, dayKey, recetasFavoritas, toggleFavoritoHandler, guardandoFavorito, numOptions, handleSelectRecipe, isSelectedRecipe }) => {
   if (!recipe || recipe.error) {
     return (
       <div className="meal-slot error-slot">
@@ -15,9 +15,10 @@ const RecipeCard = ({ recipe, mealType, dayKey, recetasFavoritas, toggleFavorito
 
   // Verificar si es favorita (si tenemos recetasFavoritas y la URL)
   const esFavorita = recetasFavoritas && recipe.url && recetasFavoritas.has(recipe.url);
+  const cardStyle = isSelectedRecipe ? { border: '3px solid #4CAF50', borderRadius: '8px', padding: '10px', margin: '5px 0' } : {padding: '10px', margin: '5px 0'};
 
   return (
-    <div className="meal-option-card recommendation-card" style={{ position: 'relative' }}>
+    <div className="meal-option-card recommendation-card" style={{ ...cardStyle, position: 'relative' }}>
       {/* --- BOTÓN DE FAVORITO --- */}
       <button
         onClick={() => toggleFavoritoHandler && toggleFavoritoHandler(recipe)}
@@ -48,6 +49,20 @@ const RecipeCard = ({ recipe, mealType, dayKey, recetasFavoritas, toggleFavorito
       
       {/* Link para ver la receta */}
       {recipe.url && <a href={recipe.url} target="_blank" rel="noopener noreferrer">Ver receta</a>}
+
+      {/* Botón para seleccionar esta receta si hay múltiples opciones y no está ya seleccionada */}
+      {numOptions > 1 && !isSelectedRecipe && handleSelectRecipe && (
+        <button 
+          onClick={() => handleSelectRecipe(dayKey, mealType, recipe)}
+          className="select-recipe-button"
+          style={{marginTop: '10px', padding: '5px 10px', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px'}}
+        >
+          Elegir esta opción
+        </button>
+      )}
+      {isSelectedRecipe && numOptions > 1 && (
+        <p style={{marginTop: '10px', color: '#4CAF50', fontWeight: 'bold'}}>✓ Seleccionada</p>
+      )}
     </div>
   );
 };
@@ -63,6 +78,17 @@ const RecomendacionSemanal = ({ token }) => {
   // Estados para favoritos
   const [recetasFavoritas, setRecetasFavoritas] = useState(new Set());
   const [guardandoFavorito, setGuardandoFavorito] = useState(false);
+
+  // Nuevos estados para la lista de la compra
+  const [shoppingList, setShoppingList] = useState(null);
+  const [loadingShoppingList, setLoadingShoppingList] = useState(false);
+  const [errorShoppingList, setErrorShoppingList] = useState('');
+
+  // Nuevo estado para el slider de calorías
+  const [targetCalories, setTargetCalories] = useState(2000); // Valor inicial por defecto
+
+  // Nuevo estado para las recetas seleccionadas por el usuario
+  const [userSelectedRecipes, setUserSelectedRecipes] = useState({});
 
   // URL base de la API
   const apiUrl = BACKEND_URL;
@@ -89,6 +115,11 @@ const RecomendacionSemanal = ({ token }) => {
           actividad: res.data.actividad
         });
         
+        // Establecer las calorías del slider basadas en el BMR si está disponible
+        if (res.data.bmr) {
+          setTargetCalories(Math.round(parseFloat(res.data.bmr) / 50) * 50); 
+        }
+        
         // Cargar recetas favoritas
         try {
           const resFavoritas = await axios.get(`${apiUrl}/favoritas`, {
@@ -111,6 +142,18 @@ const RecomendacionSemanal = ({ token }) => {
     };
     fetchUserInfo();
   }, [token, apiUrl]);
+
+  const handleCaloriesChange = (event) => {
+    setTargetCalories(parseInt(event.target.value, 10));
+  };
+
+  // Función para manejar la selección de una receta por el usuario
+  const handleSelectRecipe = (dayKey, mealType, recipe) => {
+    setUserSelectedRecipes(prevSelected => ({
+      ...prevSelected,
+      [`${dayKey}-${mealType}`]: recipe // Guardar el objeto receta completo
+    }));
+  };
 
   // Función para manejar favoritos
   const toggleFavoritoHandler = async (recipeOption) => {
@@ -180,10 +223,20 @@ const RecomendacionSemanal = ({ token }) => {
     setError('');
     setSaveSuccess('');
     setRecommendedMenu(null);
+    setShoppingList(null); // Limpiar lista de compras anterior
+    setErrorShoppingList('');
+    setUserSelectedRecipes({}); // Limpiar selecciones de recetas del usuario
+
+    const payload = {
+      target_calories: targetCalories,
+      // Podrías añadir más datos del perfil si el backend los necesita para refinar la selección
+      // como userInfo.objetivo o userInfo.actividad
+    };
+
     try {
       const response = await axios.post(
         `${apiUrl}/generar-menu-recomendado`,
-        {},
+        payload, // Enviar el payload con target_calories
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setRecommendedMenu(response.data);
@@ -201,31 +254,33 @@ const RecomendacionSemanal = ({ token }) => {
     setSavingMenu(true);
     setSaveSuccess('');
     setError('');
+    setErrorShoppingList(''); // Limpiar error de lista de compras
     
     try {
-      // Convertir el menú recomendado al formato que espera el endpoint /guardar-menu
-      // El menú guardado necesita tener una estructura como { menu: {...} }
       const menuToSave = {
         menu: {}
       };
       
-      // Para cada día en el menú recomendado
       Object.entries(recommendedMenu).forEach(([dayKey, dayData]) => {
         menuToSave.menu[dayKey] = {};
-        
-        // Para cada comida en el día
         Object.entries(dayData).forEach(([mealType, mealData]) => {
-          // Si hay opciones disponibles, usar la primera como la seleccionada
-          if (mealData && mealData.options && mealData.options.length > 0) {
+          let selectedRecipeForMeal = null;
+          const userChoiceKey = `${dayKey}-${mealType}`;
+
+          if (userSelectedRecipes[userChoiceKey]) {
+            selectedRecipeForMeal = userSelectedRecipes[userChoiceKey];
+          } else if (mealData && mealData.options && mealData.options.length > 0) {
+            selectedRecipeForMeal = mealData.options[0]; // Por defecto la primera
+          }
+
+          if (selectedRecipeForMeal) {
             menuToSave.menu[dayKey][mealType] = {
-              selected: mealData.options[0], // La primera opción como la seleccionada
-              options: mealData.options     // Conservar todas las opciones por si se necesitan
+              selected: selectedRecipeForMeal,
+              options: mealData.options // Conservar todas las opciones
             };
           } else if (mealData && mealData.error) {
-            // Si hay un error, mantenerlo
             menuToSave.menu[dayKey][mealType] = { error: mealData.error };
           } else {
-            // Si no hay datos, dejar como null
             menuToSave.menu[dayKey][mealType] = null;
           }
         });
@@ -247,96 +302,290 @@ const RecomendacionSemanal = ({ token }) => {
     }
   };
 
+  // --- FUNCIONALIDAD DE LISTA DE COMPRA Y EXPORTACIÓN ---
+
+  const handleGenerarListaCompra = async () => {
+    if (!recommendedMenu || Object.keys(recommendedMenu).length === 0) {
+      setErrorShoppingList("Primero genera un menú de recomendaciones.");
+      return;
+    }
+
+    const menuParaEnviar = {};
+    let hayComidasValidas = false;
+
+    Object.entries(recommendedMenu).forEach(([dayKey, dayData]) => {
+      menuParaEnviar[dayKey] = {};
+      Object.entries(dayData).forEach(([mealType, mealSlotData]) => {
+        let recipeToSend = null;
+        const userChoiceKey = `${dayKey}-${mealType}`;
+
+        if (userSelectedRecipes[userChoiceKey]) {
+          recipeToSend = userSelectedRecipes[userChoiceKey];
+        } else if (mealSlotData && mealSlotData.options && mealSlotData.options.length > 0) {
+          recipeToSend = mealSlotData.options[0]; // Tomar la primera opción por defecto
+        }
+        
+        if (recipeToSend && !recipeToSend.error) {
+          menuParaEnviar[dayKey][mealType] = recipeToSend;
+          hayComidasValidas = true;
+        } else {
+          menuParaEnviar[dayKey][mealType] = null; // O manejar el error si existe
+        }
+      });
+    });
+
+    if (!hayComidasValidas) {
+      setErrorShoppingList("El menú recomendado no contiene recetas válidas para generar una lista de compras.");
+      return;
+    }
+
+    setLoadingShoppingList(true);
+    setErrorShoppingList(null);
+    setShoppingList(null);
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/generate-shopping-list`,
+        { menu: menuParaEnviar }, // Enviar el menú procesado (con la primera opción seleccionada)
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setShoppingList(response.data);
+    } catch (err) {
+      console.error("Error al generar la lista de compras:", err);
+      setErrorShoppingList(err.response?.data?.detail || "Error al generar la lista de compras desde el servidor.");
+    } finally {
+      setLoadingShoppingList(false);
+    }
+  };
+
+  function exportarMenuRecomendadoTXT() {
+    if (!recommendedMenu || Object.keys(recommendedMenu).length === 0) {
+      alert("No hay menú recomendado para exportar.");
+      return;
+    }
+    let texto = "📅 Menú Semanal Recomendado (Primera Opción)\n\n";
+    
+    daysOrder.forEach((diaKeyOriginal) => {
+      // El backend para recomendaciones usa 'miercoles', pero la lógica de MenuSemanal.jsx usa 'miércoles' para el orden
+      // Aseguramos consistencia al buscar en recommendedMenu
+      const diaKey = diaKeyOriginal === 'miércoles' ? 'miercoles' : diaKeyOriginal;
+      const comidasDelDia = recommendedMenu[diaKey];
+
+      if (comidasDelDia) {
+        texto += `📌 ${diaKey.charAt(0).toUpperCase() + diaKey.slice(1)}\n`;
+        // Asumimos un orden fijo de comidas o el que venga del backend
+        const mealTypesOrder = Object.keys(comidasDelDia); 
+
+        mealTypesOrder.forEach((tipoComida) => {
+          const mealSlotData = comidasDelDia[tipoComida];
+          let recetaParaExportar = null;
+          const userChoiceKey = `${diaKey}-${tipoComida}`; // Asegurar que diaKey y tipoComida coincidan con cómo se guardan en userSelectedRecipes
+
+          if (userSelectedRecipes[userChoiceKey]) {
+            recetaParaExportar = userSelectedRecipes[userChoiceKey];
+          } else if (mealSlotData && mealSlotData.options && mealSlotData.options.length > 0) {
+            recetaParaExportar = mealSlotData.options[0]; // Primera opción por defecto
+          }
+          
+          if (recetaParaExportar) {
+            texto += `- ${tipoComida.charAt(0).toUpperCase() + tipoComida.slice(1)}: ${recetaParaExportar.label}\n`;
+            if (recetaParaExportar.calories) {
+              texto += `  Calorías: ${Math.round(recetaParaExportar.calories)} kcal\n`;
+            }
+          } else if (mealSlotData && mealSlotData.error) {
+            texto += `- ${tipoComida.charAt(0).toUpperCase() + tipoComida.slice(1)}: ${mealSlotData.error}\n`;
+          } else {
+            texto += `- ${tipoComida.charAt(0).toUpperCase() + tipoComida.slice(1)}: (No hay opción disponible)\n`;
+          }
+        });
+        texto += "\n";
+      }
+    });
+
+    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "menu_semanal_recomendado.txt";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  function exportarListaCompraRecomendadaTXT(currentShoppingList) {
+    if (!currentShoppingList || Object.keys(currentShoppingList).length === 0) {
+        alert("No hay lista de la compra para exportar.");
+        return;
+    }
+    let texto = "🛒 Lista de la Compra (Menú Recomendado)\n\n";
+
+    for (const [ingrediente, details] of Object.entries(currentShoppingList)) {
+      let cantidadStr = details.amount.toFixed(2);
+      if (details.unit && details.unit !== "unidad(es)") {
+        cantidadStr += ` ${details.unit}`;
+      }
+      texto += `- ${ingrediente}: ${cantidadStr}\n`;
+    }
+
+    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "lista_de_la_compra_recomendada.txt";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
   // Orden de los días para mostrar consistentemente
   const daysOrder = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
   return (
     <div className="menu-form-container recommendations-container">
-      <h2>Recomendaciones de Menú Semanal</h2>
+      <h2>Recomendaciones Semanales Personalizadas</h2>
       <p>
-        Genera un menú semanal personalizado basado en tus recetas favoritas (usadas como inspiración)
-        y ajustado a tus necesidades calóricas según tu perfil.
+        Ajusta tus calorías objetivo y genera un menú semanal personalizado basado en tus recetas favoritas 
+        y necesidades calóricas.
       </p>
       {userInfo && (
-        <div className="user-info-summary">
-          <p><strong>Tu BMR:</strong> {userInfo.bmr ? `${userInfo.bmr} kcal` : 'No disponible'}</p>
-          <p><strong>Nivel de Actividad:</strong> {userInfo.actividad || 'No disponible'}</p>
-          <p><strong>Objetivo Actual:</strong> {userInfo.objetivo || 'No disponible'}</p>
+        <div className="user-info-summary" style={{marginBottom: '15px'}}>
+          <p><strong>Tu BMR (referencia):</strong> {userInfo.bmr ? `${Math.round(userInfo.bmr)} kcal` : 'Calculando...'}</p>
+          {/* <p><strong>Nivel de Actividad:</strong> {userInfo.actividad || 'No disponible'}</p> */}
+          {/* <p><strong>Objetivo Actual:</strong> {userInfo.objetivo || 'No disponible'}</p> */}
         </div>
       )}
-      <button onClick={handleGenerateRecommendations} disabled={loading} className="submit-button">
+
+      {/* Slider de Calorías */}
+      <div className="form-group calories-slider-container" style={{marginBottom: '20px'}}>
+        <label htmlFor="targetCaloriesRecomendacion" style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>
+          Calorías Objetivo: <span>{targetCalories} kcal</span>
+        </label>
+        <input
+          type="range"
+          id="targetCaloriesRecomendacion"
+          name="targetCaloriesRecomendacion"
+          min="1000"
+          max="4000"
+          step="50"
+          value={targetCalories}
+          onChange={handleCaloriesChange}
+          className="calories-slider" // Puedes usar la clase global o definir una específica
+          style={{width: '100%'}}
+        />
+      </div>
+
+      <button onClick={handleGenerateRecommendations} disabled={loading || !token} className="submit-button">
         {loading ? 'Generando...' : 'Obtener Mis Recomendaciones'}
       </button>
 
-      {error && <p className="error-message">Error: {error}</p>}
-      {saveSuccess && <p className="success-message" style={{color: 'green', padding: '10px', backgroundColor: '#f0fff0', borderRadius: '5px', marginTop: '10px'}}>{saveSuccess}</p>}
+      {loading && <p className="loading-message">Buscando recomendaciones...</p>}
+      {error && <p className="error-message">{error}</p>}
+      {saveSuccess && <p className="success-message">{saveSuccess}</p>}
 
       {recommendedMenu && (
-        <div className="generated-menu weekly-view">
-          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-            <h3>Tu Menú Semanal Recomendado:</h3>
-            <button 
-              onClick={saveMenuToProfile} 
-              disabled={savingMenu}
-              className="submit-button"
-              style={{
-                backgroundColor: '#28a745', 
-                padding: '8px 16px',
-                fontSize: '0.9rem'
-              }}
-            >
-              {savingMenu ? 'Guardando...' : 'Guardar como mi menú semanal'}
+        <div className="menu-display">
+          <div style={{textAlign: 'center', marginBottom: '20px'}}>
+            <button onClick={saveMenuToProfile} disabled={savingMenu || !token} className="save-menu-button">
+              {savingMenu ? "Guardando Menú..." : "Guardar este Menú"}
             </button>
           </div>
-          
+
           {daysOrder.map(dayKey => {
-            const dayData = recommendedMenu[dayKey.toLowerCase()]; // El backend usa claves en minúscula
-            if (!dayData) return <div key={dayKey} className="day-column"><h4>{dayKey.charAt(0).toUpperCase() + dayKey.slice(1)}</h4><p>No hay datos.</p></div>;
-            
+            // El backend para recomendaciones usa 'miercoles', pero la lógica de MenuSemanal.jsx usa 'miércoles' para el orden
+            // Aseguramos consistencia al buscar en recommendedMenu
+            const dayData = recommendedMenu[dayKey] || recommendedMenu[dayKey.replace('é', 'e')];
+            if (!dayData) return null;
+
             return (
               <div key={dayKey} className="day-column">
                 <h3>{dayKey.charAt(0).toUpperCase() + dayKey.slice(1)}</h3>
-                {Object.entries(dayData).map(([mealType, mealSlot]) => {
-                  // mealSlot puede ser null o no tener opciones
-                  if (!mealSlot || !mealSlot.options || mealSlot.options.length === 0) {
-                    let errorMessage = 'No hay opciones disponibles';
-                    if (mealSlot && mealSlot.error) {
-                      errorMessage = mealSlot.error;
-                    }
-                    return (
-                      <div key={mealType} className="meal-slot">
-                        <h4>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</h4>
-                        <p>{errorMessage}</p>
-                      </div>
-                    );
-                  }
-                  // Mostrar la primera opción como recomendación principal
-                  const mainRecommendation = mealSlot.options[0]; 
-                  console.log("Receta en RecomendacionSemanal:", {
-                    label: mainRecommendation.label,
-                    url: mainRecommendation.url,
-                    tieneUrl: !!mainRecommendation.url
-                  });
-
-                  return (
-                    <div key={mealType} className="meal-slot">
-                       <h4>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</h4>
-                       <RecipeCard 
-                         recipe={mainRecommendation} 
-                         mealType={mealType} 
-                         dayKey={dayKey} 
-                         recetasFavoritas={recetasFavoritas}
-                         toggleFavoritoHandler={toggleFavoritoHandler}
-                         guardandoFavorito={guardandoFavorito}
-                       />
-                    </div>
-                  );
-                })}
+                {Object.entries(dayData).map(([mealType, mealData]) => (
+                  <div key={mealType} className="meal-slot-recommendation">
+                    <h4>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</h4>
+                    {mealData.options && mealData.options.length > 0 ? (
+                      mealData.options.map((recipe, index) => (
+                        <RecipeCard 
+                          key={recipe.url || `${dayKey}-${mealType}-${index}`}
+                          recipe={recipe} 
+                          mealType={mealType}
+                          dayKey={dayKey}
+                          recetasFavoritas={recetasFavoritas}
+                          toggleFavoritoHandler={toggleFavoritoHandler}
+                          guardandoFavorito={guardandoFavorito}
+                          numOptions={mealData.options.length}
+                          handleSelectRecipe={handleSelectRecipe}
+                          isSelectedRecipe={userSelectedRecipes[`${dayKey}-${mealType}`]?.url === recipe.url}
+                        />
+                      ))
+                    ) : (
+                      <RecipeCard recipe={mealData} mealType={mealType} dayKey={dayKey}/> // Para mostrar el error si existe
+                    )}
+                  </div>
+                ))}
               </div>
             );
           })}
+          
+          {/* Acciones del Menú Recomendado: Generar Lista de Compra y Exportar Menú */}
+          <div
+              className="menu-actions"
+              style={{
+                marginTop: "25px",
+                paddingTop: "20px",
+                borderTop: "1px solid #ccc",
+                display: "flex",
+                gap: "15px",
+                justifyContent: "center"
+              }}
+            >
+              <button
+                onClick={handleGenerarListaCompra}
+                disabled={loadingShoppingList || Object.keys(recommendedMenu).length === 0}
+              >
+                Generar Lista de Compras (Recomendado)
+              </button>
+              <button
+                onClick={exportarMenuRecomendadoTXT}
+                disabled={Object.keys(recommendedMenu).length === 0}
+              >
+                Exportar Menú Recomendado (.txt)
+              </button>
+            </div>
         </div>
       )}
+
+      {/* --- Visualización de la Lista de la Compra --- */}
+      {loadingShoppingList && <p className="loading-message" style={{textAlign: 'center', marginTop: '20px'}}>Generando lista de la compra...</p>}
+      {errorShoppingList && <p className="error-message" style={{textAlign: 'center', marginTop: '20px'}}>{errorShoppingList}</p>}
+      
+      {shoppingList && !loadingShoppingList && Object.keys(shoppingList).length > 0 && (
+        <div className="shopping-list-container" style={{ marginTop: "30px", padding: "20px", border: "1px solid #eee", borderRadius: "8px" }}>
+          <h3 style={{textAlign: "center", marginBottom: "15px"}}>Lista de la Compra (Menú Recomendado)</h3>
+          <table className="shopping-table">
+            <thead>
+              <tr>
+                <th>Ingrediente</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(shoppingList).map(([ingredient, details]) => (
+                <tr key={ingredient}>
+                  <td>{ingredient}</td>
+                  <td>{details.amount % 1 === 0 ? details.amount : details.amount.toFixed(2)} {details.unit !== "unidad(es)" ? details.unit : ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <button
+            onClick={() => exportarListaCompraRecomendadaTXT(shoppingList)}
+            style={{ display: "block", margin: "20px auto 0 auto" }}
+            className="export-list-button"
+          >
+            Exportar Lista de Compra (.txt)
+          </button>
+        </div>
+      )}
+      {shoppingList && !loadingShoppingList && Object.keys(shoppingList).length === 0 && (
+         <p style={{textAlign: 'center', marginTop: '20px', fontStyle: 'italic'}}>La lista de la compra está vacía o no se pudo generar.</p>
+      )}
+
     </div>
   );
 };
