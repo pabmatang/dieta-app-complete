@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./NavBar.css"; // Asegúrate de tenerlo importado
 
 function NavBar({ 
@@ -9,9 +9,12 @@ function NavBar({
   onLogout, 
   token 
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const handleMenuClick = () => {
     if (token) {
       goToMenuSemanal();
+      setMenuOpen(false);
     } else {
       alert("Debes iniciar sesión para generar el menú.");
     }
@@ -20,24 +23,54 @@ function NavBar({
   const handleRecomendacionesClick = () => {
     if (token) {
       goToRecomendaciones();
+      setMenuOpen(false);
     } else {
       alert("Debes iniciar sesión para ver recomendaciones.");
     }
   };
 
+  const handlePerfilClick = () => {
+    goToPerfil();
+    setMenuOpen(false);
+  };
+
+  const handleInicioClick = () => {
+    goToBienvenida();
+    setMenuOpen(false);
+  };
+
+  const handleLogoutClick = () => {
+    onLogout();
+    setMenuOpen(false);
+  };
+
+  // Alternar el menú móvil
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
   return (
     <nav className="navbar">
       <div className="nav-container">
-        <h1 className="logo" onClick={goToBienvenida}>
+        <h1 className="logo" onClick={handleInicioClick}>
           Menú Saludable
         </h1>
-        <ul className="nav-links">
-          <li><button onClick={goToBienvenida}>Inicio</button></li>
+        
+        {/* Hamburger Menu Icon */}
+        <div className="menu-icon" onClick={toggleMenu}>
+          <div className={`hamburger-line ${menuOpen ? 'open' : ''}`}></div>
+          <div className={`hamburger-line ${menuOpen ? 'open' : ''}`}></div>
+          <div className={`hamburger-line ${menuOpen ? 'open' : ''}`}></div>
+        </div>
+        
+        {/* Navigation Links - will be shown/hidden based on menuOpen state */}
+        <ul className={`nav-links ${menuOpen ? 'active' : ''}`}>
+          <li><button onClick={handleInicioClick}>Inicio</button></li>
           <li><button onClick={handleMenuClick}>Generar menú</button></li>
           <li><button onClick={handleRecomendacionesClick}>Recomendaciones</button></li>
-          <li><button onClick={goToPerfil}>Perfil</button></li>
+          <li><button onClick={handlePerfilClick}>Perfil</button></li>
           {token && (
-            <li><button onClick={onLogout}>Cerrar sesión</button></li>
+            <li><button onClick={handleLogoutClick}>Cerrar sesión</button></li>
           )}
         </ul>
       </div>
@@ -46,6 +79,7 @@ function NavBar({
 }
 
 export default NavBar;
+
 
 
 
