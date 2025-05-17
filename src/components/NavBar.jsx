@@ -7,7 +7,8 @@ function NavBar({
   goToPerfil, 
   goToRecomendaciones,
   onLogout, 
-  token 
+  token,
+  setView
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -17,6 +18,8 @@ function NavBar({
       setMenuOpen(false);
     } else {
       alert("Debes iniciar sesión para generar el menú.");
+      setView("auth");
+      setMenuOpen(false);
     }
   };
 
@@ -26,6 +29,8 @@ function NavBar({
       setMenuOpen(false);
     } else {
       alert("Debes iniciar sesión para ver recomendaciones.");
+      setView("auth");
+      setMenuOpen(false);
     }
   };
 
