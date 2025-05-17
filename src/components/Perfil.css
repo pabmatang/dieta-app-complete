@@ -1,0 +1,255 @@
+/* frontend/src/components/Perfil.css */
+
+:root {
+  --protein-color: #FF6384; /* Rosa/Rojo */
+  --fat-color: #FFCD56;    /* Amarillo */
+  --carb-color: #36A2EB;   /* Azul */
+  
+  /* Colores base adicionales para consistencia */
+  --text-color-primary: #333;
+  --text-color-secondary: #555;
+  --text-color-muted: #777;
+  --background-color-light: #f9f9f9;
+  --background-color-white: #fff;
+  --border-color-light: #eee;
+  --border-color-medium: #ddd;
+  --font-family-sans-serif: 'Arial', sans-serif; /* Considera usar una fuente más moderna o la global de tu app */
+
+  /* Mensajes */
+  --success-bg: #f0fff0;
+  --success-text: #28a745;
+  --error-bg: #fff0f0;
+  --error-text: #dc3545;
+  --info-bg: #eef7ff;
+  --info-text: #17a2b8;
+}
+
+.perfil-container {
+  padding: 20px; /* Un poco más de padding */
+  max-width: 500px; /* Un poco más de ancho */
+  margin: 30px auto;
+  font-family: var(--font-family-sans-serif);
+  background-color: var(--background-color-white);
+  border-radius: 10px; /* Bordes más suaves */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra más pronunciada */
+}
+
+/* Estilos generales para las cards dentro del perfil */
+.perfil-data-card,
+.analisis-nutricional-card,
+.favoritas-card, 
+.menu-semanal-guardado-card { 
+  background-color: var(--background-color-light);
+  padding: 25px;
+  margin-bottom: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color-light);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+/* Títulos */
+.perfil-container .main-profile-title { /* Para el H2 principal "Perfil de Usuario" */
+  color: var(--text-color-primary);
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 2em;
+  font-weight: 600;
+}
+
+.perfil-container h3 { /* Títulos de sección como "Información Personal" */
+  color: var(--text-color-primary);
+  border-bottom: 2px solid var(--protein-color); 
+  padding-bottom: 12px;
+  margin-top: 0; /* Reset margin top si es el primer elemento en una card */
+  margin-bottom: 25px;
+  font-size: 1.6em;
+  font-weight: 500;
+}
+
+.perfil-container h4 { /* Subtítulos como "Resumen Semanal", "Detalle Diario" */
+  color: var(--text-color-secondary);
+  margin-top: 25px;
+  margin-bottom: 15px;
+  font-size: 1.3em;
+  font-weight: 500;
+}
+
+.perfil-container h5 { /* Títulos más pequeños como el del gráfico */
+  color: #666;
+  margin-top: 0; /* Ajustar si es el primer elemento en su contenedor */
+  margin-bottom: 15px; /* Más espacio debajo */
+  font-size: 1.1em;
+  font-weight: bold;
+  text-align: center; /* Centrar título del gráfico */
+}
+
+/* Contenedor del gráfico de tarta de macronutrientes */
+.macro-distribution-chart-container {
+  margin-top: 25px;
+  padding: 20px;
+  border: 1px solid var(--border-color-medium);
+  border-radius: 8px;
+  background-color: var(--background-color-white); 
+}
+
+.pie-chart-macros-container { 
+  display: flex;
+  flex-direction: column; /* Leyenda debajo del gráfico */
+  align-items: center; /* Centrar el gráfico y la leyenda */
+  gap: 20px; 
+}
+
+@media (min-width: 480px) { /* En pantallas más grandes, leyenda al lado */
+  .pie-chart-macros-container {
+    flex-direction: row;
+    align-items: center; /* Alinear al centro verticalmente */
+    justify-content: center; /* Centrar el conjunto */
+    gap: 30px;
+  }
+}
+
+.pie-chart-macros {
+  width: 120px; 
+  height: 120px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color-light); 
+  flex-shrink: 0; 
+}
+
+.pie-chart-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; 
+  font-size: 0.95em; 
+}
+
+.pie-chart-legend li {
+  display: flex;
+  align-items: center;
+  color: var(--text-color-primary);
+}
+
+.legend-color-box {
+  width: 15px; 
+  height: 15px; 
+  margin-right: 10px; 
+  border-radius: 4px; 
+  border: 1px solid rgba(0,0,0,0.15); 
+}
+
+/* Estilos para la sección de resumen semanal (texto) */
+.resumen-semanal-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Una columna por defecto */
+  gap: 12px; /* Espacio entre elementos del grid */
+  padding: 15px 0; 
+  margin-bottom: 25px; 
+}
+
+@media (min-width: 600px) { /* Dos columnas en pantallas más anchas */
+  .resumen-semanal-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px; /* Más espacio en dos columnas */
+  }
+}
+
+.resumen-semanal-grid h4 { /* Título del resumen semanal */
+  grid-column: 1 / -1; 
+  margin-bottom: 10px; 
+}
+
+.resumen-semanal-grid p {
+  margin: 5px 0;
+  font-size: 1em;
+  line-height: 1.5;
+}
+
+.resumen-semanal-grid p strong {
+  color: var(--text-color-secondary);
+}
+
+/* Mensajes de información/error/éxito */
+.info-message, .error-message, .success-message {
+  padding: 12px 18px;
+  margin: 15px 0;
+  border-radius: 6px;
+  font-size: 0.95em;
+  text-align: center;
+}
+
+.info-message {
+  background-color: var(--info-bg);
+  color: var(--info-text);
+  border: 1px solid var(--info-text);
+}
+
+.error-message {
+  background-color: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid var(--error-text);
+}
+
+.success-message {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success-text);
+}
+
+/* Estilos para botones (ejemplo, puedes tenerlos más globales) */
+.button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 500;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.button-primary {
+  background-color: var(--protein-color); /* Usando un color temático */
+  color: white;
+}
+.button-primary:hover {
+  background-color: #d64567; /* Un tono más oscuro de protein-color */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.button-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+.button-secondary:hover {
+  background-color: #5a6268;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* Si decides pasar los estilos en línea del objeto 'styles' de Perfil.jsx a clases: */
+/*
+.perfil-main-title { ... }
+.perfil-section { ... }
+.perfil-section-title { ... }
+.input-field { ... }
+.save-button { ... }
+.cancel-button { ... }
+.edit-button { ... }
+.day-section { ... }
+.day-title { ... }
+.meal-card { ... }
+.meal-image { ... }
+.menu-container { ... }
+.menu-title { ... }
+.summary-grid { ... }
+.summary-item { ... }
+.summary-label { ... }
+.summary-value { ... }
+*/
+
+/* Asegúrate de que las clases que usas en Perfil.jsx coincidan con las definidas aquí */
+/* Por ejemplo, si en Perfil.jsx usas <div style={styles.container}>, y quieres pasarlo a CSS, */
+/* deberías cambiarlo a <div className="perfil-container-class-name"> (o el nombre que elijas) */
+/* y definir .perfil-container-class-name aquí. */ 
