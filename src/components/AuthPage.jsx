@@ -15,6 +15,7 @@ const AuthPage = ({ onAuth }) => {
     e.preventDefault();
     setError(""); // Limpiar error al inicio del submit
     setSuccess(""); // Limpiar success al inicio del submit
+
     // Validación básica del lado del cliente
     if (isRegistering) {
       if (!username || !email || !password) {
@@ -32,6 +33,7 @@ const AuthPage = ({ onAuth }) => {
         return; // No continuar si los campos de login están incompletos
       }
     }
+
     const url = isRegistering ? `${BACKEND_URL}/register` : `${BACKEND_URL}/login`;
     const payload = isRegistering
       ? { username, email, password }
@@ -57,7 +59,7 @@ const AuthPage = ({ onAuth }) => {
           onAuth(data.access_token);  // Para login
         }
       } else {
-       // Modificación para manejar el error detallado
+        // Modificación para manejar el error detallado
         let errorMessage = "Error en la autenticación";
         if (data.detail) {
           if (typeof data.detail === 'string') {
@@ -120,7 +122,7 @@ const AuthPage = ({ onAuth }) => {
         Iniciar sesión
       </button>
       <button
-       type={isRegistering ? "submit" : "button"}
+        type={isRegistering ? "submit" : "button"}
         onClick={
           !isRegistering
             ? (e) => {
@@ -144,4 +146,6 @@ const AuthPage = ({ onAuth }) => {
 };
 
 export default AuthPage;
+
+
 
