@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './MenuSemanal.css'; // Reutilizar algunos estilos si aplica
-import config from '../config'; // Importar la configuración
+import { BACKEND_URL } from '../config'; // Importar la configuración
 
 // Componente para mostrar una receta individual (similar a MenuSemanal.jsx)
-const RecipeCard = ({ recipe, mealType, dayKey }) => {
+const RecipeCard = ({ recipe, mealType, dayKey, recetasFavoritas, toggleFavoritoHandler, guardandoFavorito }) => {
   if (!recipe || recipe.error) {
     return (
       <div className="meal-slot error-slot">
@@ -13,13 +13,41 @@ const RecipeCard = ({ recipe, mealType, dayKey }) => {
     );
   }
 
+  // Verificar si es favorita (si tenemos recetasFavoritas y la URL)
+  const esFavorita = recetasFavoritas && recipe.url && recetasFavoritas.has(recipe.url);
+
   return (
-    <div className="meal-option-card recommendation-card">
+    <div className="meal-option-card recommendation-card" style={{ position: 'relative' }}>
+      {/* --- BOTÓN DE FAVORITO --- */}
+      <button
+        onClick={() => toggleFavoritoHandler && toggleFavoritoHandler(recipe)}
+        disabled={guardandoFavorito}
+        className={`favorite-button ${esFavorita ? 'favorited' : ''}`}
+        title={esFavorita ? "Quitar de favoritos" : "Añadir a favoritos"}
+        style={{ 
+          background: 'none', 
+          border: 'none', 
+          cursor: 'pointer', 
+          fontSize: '2.5rem',
+          color: esFavorita ? 'gold' : '#ccc',
+          position: 'absolute', 
+          top: '5px', 
+          right: '5px',
+          textShadow: esFavorita
+            ? "0 0 2px #8B7500, 0 0 5px #8B7500" 
+            : "0 0 2px #444, 0 0 3px #444",
+          zIndex: 10
+        }}
+      >
+        {esFavorita ? "⭐" : "☆"}
+      </button>
+      
       <h4>{recipe.label}</h4>
       {recipe.image && <img src={recipe.image} alt={recipe.label} className="meal-image recommendation-recipe-image" />}
       <p>Calorías: {recipe.calories ? recipe.calories.toFixed(0) : 'N/A'} kcal</p>
+      
+      {/* Link para ver la receta */}
       {recipe.url && <a href={recipe.url} target="_blank" rel="noopener noreferrer">Ver receta</a>}
-      {/* Podríamos añadir botón de "marcar como favorito" o "reemplazar" aquí en el futuro */}
     </div>
   );
 };
@@ -31,9 +59,13 @@ const RecomendacionSemanal = ({ token }) => {
   const [userInfo, setUserInfo] = useState(null); // Para mostrar BMR y objetivo
   const [savingMenu, setSavingMenu] = useState(false); // Estado para controlar el guardado de menú
   const [saveSuccess, setSaveSuccess] = useState(''); // Mensaje de éxito al guardar menú
+  
+  // Estados para favoritos
+  const [recetasFavoritas, setRecetasFavoritas] = useState(new Set());
+  const [guardandoFavorito, setGuardandoFavorito] = useState(false);
 
   // URL base de la API
-  const apiUrl = config.apiUrl;
+  const apiUrl = BACKEND_URL;
 
   // Limpiar mensaje de éxito después de un tiempo
   useEffect(() => {
@@ -56,6 +88,21 @@ const RecomendacionSemanal = ({ token }) => {
           objetivo: res.data.objetivo,
           actividad: res.data.actividad
         });
+        
+        // Cargar recetas favoritas
+        try {
+          const resFavoritas = await axios.get(`${apiUrl}/favoritas`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (resFavoritas.data && Array.isArray(resFavoritas.data.favoritas)) {
+            // Extraer las URLs de las recetas favoritas
+            const urlsFavoritas = resFavoritas.data.favoritas.map(fav => fav.recipe_url);
+            setRecetasFavoritas(new Set(urlsFavoritas));
+          }
+        } catch (favError) {
+          console.error('Error cargando recetas favoritas:', favError);
+          setRecetasFavoritas(new Set());
+        }
       } catch (err) {
         console.error('Error fetching user info for recommendations:', err);
         // No bloquear la funcionalidad principal si esto falla, pero mostrar un aviso
@@ -64,6 +111,65 @@ const RecomendacionSemanal = ({ token }) => {
     };
     fetchUserInfo();
   }, [token, apiUrl]);
+
+  // Función para manejar favoritos
+  const toggleFavoritoHandler = async (recipeOption) => {
+    if (!token) {
+      setError("Debes iniciar sesión para guardar recetas favoritas.");
+      return;
+    }
+    if (!recipeOption || !recipeOption.url) {
+      console.error("Intento de marcar como favorita una receta sin URL:", recipeOption);
+      setError("Esta receta no se puede marcar como favorita (falta identificador).");
+      return;
+    }
+
+    const recipeId = recipeOption.url;
+    const esActualmenteFavorita = recetasFavoritas.has(recipeId);
+
+    setGuardandoFavorito(true);
+    setError(null);
+
+    try {
+      if (esActualmenteFavorita) {
+        // ELIMINAR de favoritos
+        await axios.post(`${apiUrl}/eliminar-favorita`, 
+          { recipe_url: recipeId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        // AÑADIR a favoritos
+        const payloadFavorito = {
+            recipe_url: recipeOption.url,
+            label: recipeOption.label,
+            image: recipeOption.image,
+            calories: recipeOption.calories,
+            ingredients: recipeOption.ingredients || [],
+        };
+        await axios.post(`${apiUrl}/guardar-favorita`, 
+            payloadFavorito,
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      // Actualizar el estado local
+      setRecetasFavoritas(prevFavoritas => {
+        const nuevasFavoritas = new Set(prevFavoritas);
+        if (esActualmenteFavorita) {
+          nuevasFavoritas.delete(recipeId);
+        } else {
+          nuevasFavoritas.add(recipeId);
+        }
+        return nuevasFavoritas;
+      });
+
+    } catch (error) {
+      console.error("Error al actualizar estado de favorito:", error);
+      setError("No se pudo actualizar el estado de favorito. Inténtalo de nuevo.");
+    } finally {
+      setGuardandoFavorito(false);
+    }
+  };
 
   const handleGenerateRecommendations = async () => {
     if (!token) {
@@ -206,21 +312,23 @@ const RecomendacionSemanal = ({ token }) => {
                   }
                   // Mostrar la primera opción como recomendación principal
                   const mainRecommendation = mealSlot.options[0]; 
+                  console.log("Receta en RecomendacionSemanal:", {
+                    label: mainRecommendation.label,
+                    url: mainRecommendation.url,
+                    tieneUrl: !!mainRecommendation.url
+                  });
 
                   return (
                     <div key={mealType} className="meal-slot">
                        <h4>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</h4>
-                       <RecipeCard recipe={mainRecommendation} mealType={mealType} dayKey={dayKey} />
-                       {/* Opcional: Mostrar más opciones si se generan 
-                       mealSlot.options.length > 1 && (
-                        <details>
-                          <summary>Otras opciones ({mealSlot.options.length -1})</summary>
-                          {mealSlot.options.slice(1).map((option, index) => (
-                            <RecipeCard key={index} recipe={option} mealType={mealType} dayKey={dayKey} />
-                          ))}
-                        </details>
-                       )
-                       */}
+                       <RecipeCard 
+                         recipe={mainRecommendation} 
+                         mealType={mealType} 
+                         dayKey={dayKey} 
+                         recetasFavoritas={recetasFavoritas}
+                         toggleFavoritoHandler={toggleFavoritoHandler}
+                         guardandoFavorito={guardandoFavorito}
+                       />
                     </div>
                   );
                 })}
