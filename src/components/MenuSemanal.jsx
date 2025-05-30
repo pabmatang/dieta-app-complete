@@ -1144,27 +1144,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
                                   paddingTop: "10px",
                                 }}
                               >
-                                <button
-                                  onClick={() =>
-                                    sugerirAlternativaSaludable(
-                                      mealSlotId,
-                                      diaKey,
-                                      tipoComida
-                                    )
-                                  }
-                                  disabled={
-                                    loading ||
-                                    (alternativaVisiblePara !== null &&
-                                      alternativaVisiblePara !== mealSlotId)
-                                  }
-                                >
-                                  Sugerir alternativa a "
-                                  {currentSelectedRecipeInSlot.label.substring(
-                                    0,
-                                    25
-                                  )}
-                                  ..."
-                                </button>
+                              
                                 {alternativaVisiblePara === mealSlotId &&
                                   alternativas[mealSlotId] && (
                                     <div className="alternativa-card">
