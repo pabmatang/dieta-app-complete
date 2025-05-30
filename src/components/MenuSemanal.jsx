@@ -1131,52 +1131,7 @@ Donde CALORIAS_ESTIMADAS es solo un número (ej: Ensalada César Saludable :: Po
                           );
                         })}
                           
-                          {/* Sección de Alternativa Saludable para la opción SELECCIONADA */}
-                          {currentSelectedRecipeInSlot &&
-                            !currentSelectedRecipeInSlot.error &&
-                            currentSelectedRecipeInSlot.ingredients?.length >
-                              0 && (
-                              <div
-                                className="comida-card-actions"
-                                style={{
-                                  marginTop: "10px",
-                                  borderTop: "1px dashed #eee",
-                                  paddingTop: "10px",
-                                }}
-                              >
-                              
-                                {alternativaVisiblePara === mealSlotId &&
-                                  alternativas[mealSlotId] && (
-                                    <div className="alternativa-card">
-                                      {" "}
-                                      {/* Estilos para .alternativa-card */}
-                                      <h4>Alternativa sugerida:</h4>
-                                      <div
-                                        className="alternativa-contenido"
-                                        dangerouslySetInnerHTML={{
-                                          __html: simpleMarkdownToHTML(
-                                            alternativas[mealSlotId]
-                                          ),
-                                        }}
-                                      />
-                                      <button
-                                        onClick={() =>
-                                          aplicarAlternativa(
-                                            mealSlotId,
-                                            diaKey,
-                                            tipoComida
-                                          )
-                                        }
-                                      >
-                                        Usar esta Alternativa
-                                      </button>
-                                      <button onClick={cerrarAlternativa}>
-                                        Cerrar Sugerencia
-                                      </button>
-                                    </div>
-                                  )}
-                              </div>
-                            )}
+                          
                         </div>
                       );
                     })}
